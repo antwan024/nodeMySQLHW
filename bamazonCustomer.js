@@ -6,7 +6,7 @@ var connection = mysql.createConnection({
     host: "localhost",
     port: 3306,
     user: "root",
-    password: "mysql420",
+    password: "",
     database: "bamazon"
 
 });
@@ -47,11 +47,11 @@ function buyProduct() {
             choices: function() {
               var choiceArray = [];
               for (var i = 0; i < results.length; i++) {
-                choiceArray.push(results[i].id);
+                choiceArray.push(results[i].product_name);
               }
               return choiceArray;
             },
-            message: "What product (by id) would you like to buy?"
+            message: "What product would you like to buy?"
           },
           {
             name: "amount",
@@ -64,34 +64,37 @@ function buyProduct() {
           var chosenProduct;
 
           for (var i = 0; i < results.length; i++) {
-            if (results[i].id === answer.choice) {
+            if (results[i].product_name === answer.choice) {
               chosenProduct = results[i];
             }
           }
   
-          if (chosenProduct.stock_quantity < parseInt(answer.stock_quantity)) {
+          if (chosenProduct.stock_quantity > parseFloat(answer.amount)) {
             // if quantaty validates, update db, let the user know, and start over
+
+            var newQty = chosenProduct.stock_quantity - answer.amount;
+            console.log(newQty);
             connection.query(
               "UPDATE stock_quantity SET ? WHERE ?",
               [
                 {
-                  stock_quantity: stock_quantity - answer.bid 
+                  stock_quantity: newQty
                 },
                 {
-                  id: chosenItem.id
+                  id: chosenProduct.id
                 }
               ],
               function(error) {
                 if (error) throw err;
                 console.log("Bought successfully!");
-                start();
+                buyProduct();
               }
             );
           }
           else {
             // bid wasn't high enough, so apologize and start over
             console.log("We don't have enough of that! Ener a lesser amount.");
-            start();
+            buyProduct();
           }
         });
     });
